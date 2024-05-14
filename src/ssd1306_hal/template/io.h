@@ -104,6 +104,7 @@ static inline uint32_t micros(void)       // micros()
 
 static inline void delay(uint32_t ms)     // delay()
 {
+    vTaskDelay(ms / portTICK_PERIOD_MS);
 }
 
 static inline void delayMicroseconds(uint32_t us)  // delayMicroseconds()

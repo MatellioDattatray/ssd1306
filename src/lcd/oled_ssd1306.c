@@ -36,51 +36,69 @@
 uint8_t s_ssd1306_startLine = 0;
 
 static const uint8_t PROGMEM s_oled128x64_initData[] =
-{
+    {
 #ifdef SDL_EMULATION
-    SDL_LCD_SSD1306,
-    0x00,
+        SDL_LCD_SSD1306,
+        0x00,
 #endif
-    SSD1306_DISPLAYOFF, // display off
-    SSD1306_MEMORYMODE, HORIZONTAL_ADDRESSING_MODE, // Page Addressing mode
-    SSD1306_COMSCANDEC,             // Scan from 127 to 0 (Reverse scan)
-    SSD1306_SETSTARTLINE | 0x00,    // First line to start scanning from
-    SSD1306_SETCONTRAST, 0x7F,      // contast value to 0x7F according to datasheet
-    SSD1306_SEGREMAP | 0x01,        // Use reverse mapping. 0x00 - is normal mapping
-    SSD1306_NORMALDISPLAY,
-    SSD1306_SETMULTIPLEX, 63,       // Reset to default MUX. See datasheet
-    SSD1306_SETDISPLAYOFFSET, 0x00, // no offset
-    SSD1306_SETDISPLAYCLOCKDIV, 0x80,// set to default ratio/osc frequency
-    SSD1306_SETPRECHARGE, 0x22,     // switch precharge to 0x22 // 0xF1
-    SSD1306_SETCOMPINS, 0x12,       // set divide ratio
-    SSD1306_SETVCOMDETECT, 0x20,    // vcom deselect to 0x20 // 0x40
-    SSD1306_CHARGEPUMP, 0x14,       // Enable charge pump
-    SSD1306_DISPLAYALLON_RESUME,
-    SSD1306_DISPLAYON,
+        SSD1306_DISPLAYOFF, // display off
+        SSD1306_MEMORYMODE,
+        HORIZONTAL_ADDRESSING_MODE,  // Page Addressing mode
+        SSD1306_COMSCANDEC,          // Scan from 127 to 0 (Reverse scan)
+        SSD1306_SETSTARTLINE | 0x00, // First line to start scanning from
+        SSD1306_SETCONTRAST,
+        0x7F,                    // contast value to 0x7F according to datasheet
+        SSD1306_SEGREMAP | 0x01, // Use reverse mapping. 0x00 - is normal mapping
+        SSD1306_NORMALDISPLAY,
+        SSD1306_SETMULTIPLEX,
+        63, // Reset to default MUX. See datasheet
+        SSD1306_SETDISPLAYOFFSET,
+        0x00, // no offset
+        SSD1306_SETDISPLAYCLOCKDIV,
+        0x80, // set to default ratio/osc frequency
+        SSD1306_SETPRECHARGE,
+        0x22, // switch precharge to 0x22 // 0xF1
+        SSD1306_SETCOMPINS,
+        0x12, // set divide ratio
+        SSD1306_SETVCOMDETECT,
+        0x20, // vcom deselect to 0x20 // 0x40
+        SSD1306_CHARGEPUMP,
+        0x14, // Enable charge pump
+        SSD1306_DISPLAYALLON_RESUME,
+        SSD1306_DISPLAYON,
 };
 
 static const uint8_t PROGMEM s_oled128x32_initData[] =
-{
+    {
 #ifdef SDL_EMULATION
-    SDL_LCD_SSD1306,
-    0x00,
+        SDL_LCD_SSD1306,
+        0x00,
 #endif
-    SSD1306_DISPLAYOFF, // display off
-    SSD1306_SETDISPLAYCLOCKDIV, 0x80,
-    SSD1306_SETMULTIPLEX, 31,
-    SSD1306_SETDISPLAYOFFSET, 0x00, // --no offset
-    SSD1306_SETSTARTLINE | 0x00,
-    SSD1306_CHARGEPUMP, 0x14, // 0x10
-    SSD1306_SEGREMAP | 0x01,  // Reverse mapping
-    SSD1306_COMSCANDEC,
-    SSD1306_SETCOMPINS, 0x02,
-    SSD1306_SETCONTRAST, 0x7F, // contast value
-    SSD1306_SETPRECHARGE, 0x22, // 0x1F
-    SSD1306_SETVCOMDETECT, 0x40,
-    SSD1306_MEMORYMODE, HORIZONTAL_ADDRESSING_MODE,
-    SSD1306_DISPLAYALLON_RESUME,
-    SSD1306_NORMALDISPLAY,
-    SSD1306_DISPLAYON,
+        SSD1306_DISPLAYOFF, // display off
+        SSD1306_SETDISPLAYCLOCKDIV,
+        0x80,
+        SSD1306_SETMULTIPLEX,
+        31,
+        SSD1306_SETDISPLAYOFFSET,
+        0x00, // --no offset
+        SSD1306_SETSTARTLINE | 0x00,
+        SSD1306_CHARGEPUMP,
+        0x14,                    // 0x10
+        SSD1306_SEGREMAP | 0x01, // Reverse mapping
+        SSD1306_COMSCANDEC,
+        SSD1306_SETCOMPINS,
+        0x02,
+        SSD1306_SETCONTRAST,
+        0x7F, // contast value
+        SSD1306_SETPRECHARGE,
+        0x22, // 0x1F
+        SSD1306_SETVCOMDETECT,
+        0x40,
+        SSD1306_MEMORYMODE,
+        HORIZONTAL_ADDRESSING_MODE,
+        SSD1306_DISPLAYALLON_RESUME,
+        SSD1306_NORMALDISPLAY,
+        SSD1306_DISPLAYON,
 };
 
 static void ssd1306_setBlock(lcduint_t x, lcduint_t y, lcduint_t w)
@@ -121,17 +139,19 @@ void ssd1306_displayOff()
     ssd1306_sendCommand(SSD1306_DISPLAYOFF);
 }
 
-
 void ssd1306_displayOn()
 {
     ssd1306_sendCommand(SSD1306_DISPLAYON);
 }
-
 void ssd1306_setContrast(uint8_t contrast)
 {
     ssd1306_commandStart();
     ssd1306_intf.send(SSD1306_SETCONTRAST);
-    ssd1306_intf.send(contrast);
+    ssd1306_intf.stop();
+    delay(10);
+    ssd1306_dataStart();
+    uint8_t value = 0xC0 | contrast;
+    ssd1306_intf.send(value); // Send the combined value variable, not contrast
     ssd1306_intf.stop();
 }
 
@@ -147,18 +167,18 @@ void ssd1306_normalMode()
 
 void ssd1306_flipHorizontal(uint8_t mode)
 {
-    ssd1306_sendCommand( SSD1306_SEGREMAP | (mode ? 0x00: 0x01 ) );
+    ssd1306_sendCommand(SSD1306_SEGREMAP | (mode ? 0x00 : 0x01));
 }
 
 void ssd1306_flipVertical(uint8_t mode)
 {
-    ssd1306_sendCommand( mode ? SSD1306_COMSCANINC : SSD1306_COMSCANDEC );
+    ssd1306_sendCommand(mode ? SSD1306_COMSCANINC : SSD1306_COMSCANDEC);
 }
 
 void ssd1306_setStartLine(uint8_t line)
 {
     s_ssd1306_startLine = line;
-    ssd1306_sendCommand( SSD1306_SETSTARTLINE | (line & 0x3F) );
+    ssd1306_sendCommand(SSD1306_SETSTARTLINE | (line & 0x3F));
 }
 
 uint8_t ssd1306_getStartLine(void)
@@ -170,35 +190,34 @@ uint8_t ssd1306_getStartLine(void)
 //  I2C SSD1306 128x64
 ///////////////////////////////////////////////////////////////////////////////
 
-void    ssd1306_init()
+void ssd1306_init()
 {
     ssd1306_128x64_i2c_init();
 }
 
-
-void    ssd1306_128x64_init()
+void ssd1306_128x64_init()
 {
     ssd1306_lcd.type = LCD_TYPE_SSD1306;
     ssd1306_lcd.height = 64;
     ssd1306_lcd.width = 128;
     ssd1306_lcd.set_block = ssd1306_setBlock;
     ssd1306_lcd.next_page = ssd1306_nextPage;
-    ssd1306_lcd.send_pixels1  = ssd1306_intf.send;
+    ssd1306_lcd.send_pixels1 = ssd1306_intf.send;
     ssd1306_lcd.send_pixels_buffer1 = ssd1306_intf.send_buffer;
     ssd1306_lcd.set_mode = ssd1306_setMode_int;
-    for( uint8_t i=0; i<sizeof(s_oled128x64_initData); i++)
+    for (uint8_t i = 0; i < sizeof(s_oled128x64_initData); i++)
     {
         ssd1306_sendCommand(pgm_read_byte(&s_oled128x64_initData[i]));
     }
 }
 
-void    ssd1306_128x64_i2c_init()
+void ssd1306_128x64_i2c_init()
 {
     ssd1306_i2cInit();
     ssd1306_128x64_init();
 }
 
-void    ssd1306_128x64_i2c_initEx(int8_t scl, int8_t sda, int8_t sa)
+void ssd1306_128x64_i2c_initEx(int8_t scl, int8_t sda, int8_t sa)
 {
     ssd1306_i2cInitEx(scl, sda, sa);
     ssd1306_128x64_init();
@@ -208,11 +227,11 @@ void    ssd1306_128x64_i2c_initEx(int8_t scl, int8_t sda, int8_t sa)
 //  SPI SSD1306 128x64
 ///////////////////////////////////////////////////////////////////////////////
 
-void   ssd1306_128x64_spi_init(int8_t rstPin, int8_t cesPin, int8_t dcPin)
+void ssd1306_128x64_spi_init(int8_t rstPin, int8_t cesPin, int8_t dcPin)
 {
-    if (rstPin >=0)
+    if (rstPin >= 0)
     {
-        ssd1306_resetController( rstPin, 10 );
+        ssd1306_resetController(rstPin, 10);
     }
     ssd1306_spiInit(cesPin, dcPin);
     ssd1306_128x64_init();
@@ -222,23 +241,22 @@ void   ssd1306_128x64_spi_init(int8_t rstPin, int8_t cesPin, int8_t dcPin)
 //  I2C SSD1306 128x32
 ///////////////////////////////////////////////////////////////////////////////
 
-void    ssd1306_128x32_init()
+void ssd1306_128x32_init()
 {
     ssd1306_lcd.type = LCD_TYPE_SSD1306;
     ssd1306_lcd.height = 32;
     ssd1306_lcd.width = 128;
     ssd1306_lcd.set_block = ssd1306_setBlock;
     ssd1306_lcd.next_page = ssd1306_nextPage;
-    ssd1306_lcd.send_pixels1  = ssd1306_intf.send;
+    ssd1306_lcd.send_pixels1 = ssd1306_intf.send;
     ssd1306_lcd.set_mode = ssd1306_setMode_int;
-    for( uint8_t i=0; i < sizeof(s_oled128x32_initData); i++)
+    for (uint8_t i = 0; i < sizeof(s_oled128x32_initData); i++)
     {
         ssd1306_sendCommand(pgm_read_byte(&s_oled128x32_initData[i]));
     }
 }
 
-
-void    ssd1306_128x32_i2c_init()
+void ssd1306_128x32_i2c_init()
 {
     ssd1306_i2cInit();
     ssd1306_128x32_init();
@@ -248,11 +266,11 @@ void    ssd1306_128x32_i2c_init()
 //  SPI SSD1306 128x32
 ///////////////////////////////////////////////////////////////////////////////
 
-void   ssd1306_128x32_spi_init(int8_t rstPin, int8_t cesPin, int8_t dcPin)
+void ssd1306_128x32_spi_init(int8_t rstPin, int8_t cesPin, int8_t dcPin)
 {
-    if (rstPin >=0)
+    if (rstPin >= 0)
     {
-        ssd1306_resetController( rstPin, 10 );
+        ssd1306_resetController(rstPin, 10);
     }
     ssd1306_spiInit(cesPin, dcPin);
     ssd1306_128x32_init();

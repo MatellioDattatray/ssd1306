@@ -39,12 +39,12 @@ static void platform_spi_send_cache();
 #endif
 
 // TODO: To complete support. Any help is welcome
-int  digitalRead(int pin)   // digitalRead()
+int digitalRead(int pin) // digitalRead()
 {
     return gpio_get_level(pin);
 }
 
-void digitalWrite(int pin, int level)  // digitalWrite()
+void digitalWrite(int pin, int level) // digitalWrite()
 {
 #if defined(CONFIG_PLATFORM_SPI_AVAILABLE) && defined(CONFIG_PLATFORM_SPI_ENABLE)
     if (s_ssd1306_dc == pin)
@@ -68,7 +68,7 @@ uint32_t millis(void)
     return xTaskGetTickCount() * portTICK_PERIOD_MS;
 }
 
-void delay(uint32_t ms)     // delay()
+void delay(uint32_t ms) // delay()
 {
     vTaskDelay(ms / portTICK_PERIOD_MS);
 }
@@ -93,14 +93,14 @@ static void platform_i2c_start(void)
     if (s_cmd_handle == NULL)
         s_cmd_handle = i2c_cmd_link_create();
     i2c_master_start(s_cmd_handle);
-    i2c_master_write_byte(s_cmd_handle, ( s_i2c_addr << 1 ) | I2C_MASTER_WRITE, 0x1);
+    i2c_master_write_byte(s_cmd_handle, (s_i2c_addr << 1) | I2C_MASTER_WRITE, 0x1);
 }
 
 static void platform_i2c_stop(void)
 {
     // ... Complete i2c communication
     i2c_master_stop(s_cmd_handle);
-    /*esp_err_t ret =*/ i2c_master_cmd_begin(s_bus_id, s_cmd_handle, 1000 / portTICK_RATE_MS);
+    /*esp_err_t ret =*/i2c_master_cmd_begin(s_bus_id, s_cmd_handle, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(s_cmd_handle);
     s_cmd_handle = NULL;
 }
@@ -125,32 +125,34 @@ static void platform_i2c_send_buffer(const uint8_t *data, uint16_t len)
         platform_i2c_send(*data);
         data++;
     }
-//    i2c_master_write(cmd, data_wr, size, ACK_CHECK_EN);
+    //    i2c_master_write(cmd, data_wr, size, ACK_CHECK_EN);
 }
 
-void ssd1306_platform_i2cInit(int8_t busId, uint8_t addr, ssd1306_platform_i2cConfig_t * cfg)
+void ssd1306_platform_i2cInit(int8_t busId, uint8_t addr, ssd1306_platform_i2cConfig_t *cfg)
 {
-    if (addr) s_i2c_addr = addr;
+    if (addr)
+        s_i2c_addr = addr;
     ssd1306_intf.spi = 0;
     ssd1306_intf.start = &platform_i2c_start;
-    ssd1306_intf.stop  = &platform_i2c_stop;
-    ssd1306_intf.send  = &platform_i2c_send;
+    ssd1306_intf.stop = &platform_i2c_stop;
+    ssd1306_intf.send = &platform_i2c_send;
     ssd1306_intf.close = &platform_i2c_close;
     ssd1306_intf.send_buffer = &platform_i2c_send_buffer;
     // init your interface here
-    if ( busId < 0) busId = I2C_NUM_1;
+    if (busId < 0)
+        busId = I2C_NUM_1;
     s_bus_id = busId;
-    i2c_config_t conf = { 0 };
+    i2c_config_t conf = {0};
     conf.mode = I2C_MODE_MASTER;
     conf.sda_io_num = cfg->sda >= 0 ? cfg->sda : 21;
     conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
     conf.scl_io_num = cfg->scl >= 0 ? cfg->scl : 22;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = 400000; //I2C_EXAMPLE_MASTER_FREQ_HZ;
+    conf.master.clk_speed = 400000; // I2C_EXAMPLE_MASTER_FREQ_HZ;
     i2c_param_config(s_bus_id, &conf);
     i2c_driver_install(s_bus_id, conf.mode, 0, 0, 0);
-//                       I2C_EXAMPLE_MASTER_RX_BUF_DISABLE,
-//                       I2C_EXAMPLE_MASTER_TX_BUF_DISABLE, 0);
+    //                       I2C_EXAMPLE_MASTER_RX_BUF_DISABLE,
+    //                       I2C_EXAMPLE_MASTER_TX_BUF_DISABLE, 0);
 }
 #endif
 
@@ -179,17 +181,17 @@ static void platform_spi_send_cache()
     uint8_t *data = s_spi_cache;
     while (s_spi_cached_count)
     {
-        size_t sz = s_spi_cached_count > 32 ? 32: s_spi_cached_count;
+        size_t sz = s_spi_cached_count > 32 ? 32 : s_spi_cached_count;
         spi_transaction_t t;
         memset(&t, 0, sizeof(t));
-        t.length=8*sz;          // 8 bits
-        t.tx_buffer=data;
+        t.length = 8 * sz; // 8 bits
+        t.tx_buffer = data;
         // ... Send byte to spi communication channel
         // We do not care here about DC line state, because
         // ssd1306 library already set DC pin via ssd1306_spiDataMode() before call to send().
         spi_device_transmit(s_spi, &t);
-        data+=sz;
-        s_spi_cached_count-=sz;
+        data += sz;
+        s_spi_cached_count -= sz;
     }
     s_spi_cached_count = 0;
 }
@@ -199,14 +201,14 @@ static void platform_spi_start(void)
     // ... Open spi channel for your device with specific s_ssd1306_cs, s_ssd1306_dc
     if (s_first_spi_session)
     {
-        spi_device_interface_config_t devcfg=
-        {
-            .clock_speed_hz = s_ssd1306_spi_clock,
-            .mode=0,
-            .spics_io_num=s_ssd1306_cs,
-            .queue_size=7,       // max 7 transactions at a time
-        };
-        spi_bus_add_device(s_spi_bus_id ? VSPI_HOST : HSPI_HOST, &devcfg, &s_spi);
+        spi_device_interface_config_t devcfg =
+            {
+                .clock_speed_hz = s_ssd1306_spi_clock,
+                .mode = 0,
+                .spics_io_num = s_ssd1306_cs,
+                .queue_size = 7, // max 7 transactions at a time
+            };
+        spi_bus_add_device(SPI3_HOST, &devcfg, &s_spi);
         s_first_spi_session = 0;
     }
     s_spi_cached_count = 0;
@@ -223,7 +225,7 @@ static void platform_spi_send(uint8_t data)
 {
     s_spi_cache[s_spi_cached_count] = data;
     s_spi_cached_count++;
-    if ( s_spi_cached_count >= sizeof( s_spi_cache ) )
+    if (s_spi_cached_count >= sizeof(s_spi_cache))
     {
         platform_spi_send_cache();
     }
@@ -234,9 +236,9 @@ static void platform_spi_close(void)
     // ... free all spi resources here
     if (!s_first_spi_session)
     {
-        spi_bus_remove_device( s_spi );
+        spi_bus_remove_device(s_spi);
     }
-    spi_bus_free( s_spi_bus_id ? VSPI_HOST : HSPI_HOST );
+    spi_bus_free(SPI3_HOST);
 }
 
 static void platform_spi_send_buffer(const uint8_t *data, uint16_t len)
@@ -253,7 +255,8 @@ void ssd1306_platform_spiInit(int8_t busId,
                               int8_t dcPin)
 {
     // Use VSPI by default
-    if (busId < 0) busId = 1;
+    if (busId < 0)
+        busId = 1;
     s_spi_bus_id = busId;
 
     // If cesPin is not provided, select by default
@@ -262,29 +265,31 @@ void ssd1306_platform_spiInit(int8_t busId,
         cesPin = s_spi_bus_id ? 5 : 15;
     }
     s_ssd1306_cs = cesPin;
-    if (dcPin>=0) s_ssd1306_dc = dcPin;
+    if (dcPin >= 0)
+        s_ssd1306_dc = dcPin;
 
-    if (cesPin >=0) pinMode(cesPin, OUTPUT);
-    if (dcPin >= 0) pinMode(dcPin, OUTPUT);
+    if (cesPin >= 0)
+        pinMode(cesPin, OUTPUT);
+    if (dcPin >= 0)
+        pinMode(dcPin, OUTPUT);
 
     ssd1306_intf.spi = 1;
     ssd1306_intf.start = &platform_spi_start;
-    ssd1306_intf.stop  = &platform_spi_stop;
-    ssd1306_intf.send  = &platform_spi_send;
+    ssd1306_intf.stop = &platform_spi_stop;
+    ssd1306_intf.send = &platform_spi_send;
     ssd1306_intf.close = &platform_spi_close;
     ssd1306_intf.send_buffer = &platform_spi_send_buffer;
 
     // init your interface here
-    spi_bus_config_t buscfg=
-    {
-        .miso_io_num= s_spi_bus_id ? 19 : 12,
-        .mosi_io_num= s_spi_bus_id ? 23 : 13,
-        .sclk_io_num= s_spi_bus_id ? 18 : 14,
-        .quadwp_io_num=-1,
-        .quadhd_io_num=-1,
-        .max_transfer_sz=32
-    };
-    spi_bus_initialize(s_spi_bus_id ? VSPI_HOST : HSPI_HOST, &buscfg, 0); // 0 -no dma
+    spi_bus_config_t buscfg =
+        {
+            .miso_io_num = s_spi_bus_id ? 19 : 12,
+            .mosi_io_num = 21,
+            .sclk_io_num = 20,
+            .quadwp_io_num = -1,
+            .quadhd_io_num = -1,
+            .max_transfer_sz = 32};
+    spi_bus_initialize(SPI3_HOST, &buscfg, 0); // 0 -no dma
     s_first_spi_session = 1;
 }
 #endif

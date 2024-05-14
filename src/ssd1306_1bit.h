@@ -352,6 +352,8 @@ void         ssd1306_drawBufferFast(lcdint_t x, lcdint_t y, lcduint_t w, lcduint
  */
 void         ssd1306_drawBitmap(uint8_t x, uint8_t y, uint8_t w, uint8_t h, const uint8_t *buf);
 
+void ssd1306_drawBitmap_horizontal(uint8_t x, uint8_t y, uint8_t w, uint8_t h, const uint8_t *buf);
+
 /**
  * Draws bitmap, located in Flash, on the display
  * The bitmap should be in XBMP format

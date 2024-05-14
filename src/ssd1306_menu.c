@@ -132,6 +132,7 @@ void ssd1306_showMenu(SAppMenu *menu)
         drawMenuItem(menu, i);
     }
     menu->oldSelection = menu->selection;
+    delay(100);
 }
 
 void ssd1306_showMenu8(SAppMenu *menu)
